@@ -1,11 +1,11 @@
 <script setup lang="ts">
 import SendBirdCall, {
-  AcceptParams,
+  type AcceptParams,
   type AuthOption,
   type DialParams,
   type DirectCall,
 } from 'sendbird-calls'
-import { onMounted, ref, type Ref } from 'vue'
+import { onMounted, ref } from 'vue'
 
 console.log(import.meta.env)
 const appId = import.meta.env.VITE_APP_ID
@@ -36,16 +36,16 @@ const acceptCall = (call: DirectCall) => {
     console.log('onRemoteVideoSettingsChanged: ', call)
   }
 
-  // const acceptParams: AcceptParams = {
-  //   callOption: {
-  //     localMediaView: document.getElementById('local_video_element_id') as HTMLVideoElement,
-  //     remoteMediaView: document.getElementById('remote_video_element_id') as HTMLVideoElement,
-  //     audioEnabled: true,
-  //     videoEnabled: true,
-  //   },
-  // }
-  //
-  // call.accept(acceptParams)
+  const acceptParams: AcceptParams = {
+    callOption: {
+      localMediaView: document.getElementById('local_video_element_id') as HTMLVideoElement,
+      remoteMediaView: document.getElementById('remote_video_element_id') as HTMLVideoElement,
+      audioEnabled: true,
+      videoEnabled: true,
+    },
+  }
+
+  call.accept(acceptParams)
 }
 
 function authenticate(authOption: AuthOption) {
@@ -120,7 +120,7 @@ onMounted(() => {
 
 <template>
   <main>
-    <div>hello</div>
+    <h1>SendBird GroupCall</h1>
     <div>
       <div>
         <span>你的userId</span>
