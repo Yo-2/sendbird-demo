@@ -17,6 +17,76 @@ SendBirdCall.init(appId)
 
 const acceptCall = (call: DirectCall) => {
   call.onEstablished = (call) => {
+    console.log('onEstablished: ', call)
+  }
+
+  call.onConnected = (call) => {
+    console.log('onConnected: ', call)
+  }
+
+  call.onEnded = (call) => {
+    console.log('onEnded: ', call)
+  }
+
+  call.onRemoteAudioSettingsChanged = (call) => {
+    console.log('onRemoteAudioSettingsChanged: ', call)
+  }
+
+  call.onRemoteVideoSettingsChanged = (call) => {
+    console.log('onRemoteVideoSettingsChanged: ', call)
+  }
+
+  // const acceptParams: AcceptParams = {
+  //   callOption: {
+  //     localMediaView: document.getElementById('local_video_element_id') as HTMLVideoElement,
+  //     remoteMediaView: document.getElementById('remote_video_element_id') as HTMLVideoElement,
+  //     audioEnabled: true,
+  //     videoEnabled: true,
+  //   },
+  // }
+  //
+  // call.accept(acceptParams)
+}
+
+function authenticate(authOption: AuthOption) {
+  // console.log('authOption: ', authOption)
+  SendBirdCall.authenticate(authOption, (result, error) => {
+    if (error) {
+      console.error('error: ', error)
+    } else {
+      console.log('result: ', result)
+      SendBirdCall.connectWebSocket()
+        .then(() => {
+          console.log('Successfully connected to WebSocket... ')
+        })
+        .catch((err) => {
+          console.error('connectWebSocket error: ', err)
+        })
+    }
+  })
+}
+
+function dial(remote_userId: string) {
+  console.log('remote_userId: ', remote_userId)
+  SendBirdCall.useMedia({ audio: true, video: true })
+  const dialParams: DialParams = {
+    userId: remote_userId,
+    isVideoCall: true,
+    callOption: {
+      localMediaView: document.getElementById('local_video_element_id') as HTMLVideoElement,
+      remoteMediaView: document.getElementById('remote_video_element_id') as HTMLVideoElement,
+      audioEnabled: true,
+      videoEnabled: true,
+    },
+  }
+  const call = SendBirdCall.dial(dialParams, (call, error) => {
+    if (error) {
+      console.error('dial error: ', error)
+    }
+    console.log('dial call: ', call)
+  })
+
+  call.onEstablished = (call) => {
     //...
   }
 
@@ -35,75 +105,6 @@ const acceptCall = (call: DirectCall) => {
   call.onRemoteVideoSettingsChanged = (call) => {
     //...
   }
-
-  const acceptParams: AcceptParams = {
-    callOption: {
-      localMediaView: document.getElementById('local_video_element_id') as HTMLVideoElement,
-      remoteMediaView: document.getElementById('remote_video_element_id') as HTMLVideoElement,
-      audioEnabled: true,
-      videoEnabled: true,
-    },
-  }
-
-  call.accept(acceptParams)
-}
-
-function authenticate(authOption: AuthOption) {
-  // console.log('authOption: ', authOption)
-  SendBirdCall.authenticate(authOption, (result, error) => {
-    if (error) {
-      console.error('error: ', error)
-    } else {
-      console.log('result: ', result)
-    }
-  })
-}
-
-function dial(remote_userId: string) {
-  console.log('remote_userId: ', remote_userId)
-  SendBirdCall.connectWebSocket()
-    .then(() => {
-      console.log('Successfully connected to WebSocket... ')
-      SendBirdCall.useMedia({ audio: true, video: true })
-      const dialParams: DialParams = {
-        userId: remote_userId,
-        isVideoCall: true,
-        callOption: {
-          localMediaView: document.getElementById('local_video_element_id') as HTMLVideoElement,
-          remoteMediaView: document.getElementById('remote_video_element_id') as HTMLVideoElement,
-          audioEnabled: true,
-          videoEnabled: true,
-        },
-      }
-      const call = SendBirdCall.dial(dialParams, (call, error) => {
-        if (error) {
-          console.error('dial error: ', error)
-        }
-      })
-
-      call.onEstablished = (call) => {
-        //...
-      }
-
-      call.onConnected = (call) => {
-        //...
-      }
-
-      call.onEnded = (call) => {
-        //...
-      }
-
-      call.onRemoteAudioSettingsChanged = (call) => {
-        //...
-      }
-
-      call.onRemoteVideoSettingsChanged = (call) => {
-        //...
-      }
-    })
-    .catch((err) => {
-      console.error('connectWebSocket error: ', err)
-    })
 }
 
 onMounted(() => {
