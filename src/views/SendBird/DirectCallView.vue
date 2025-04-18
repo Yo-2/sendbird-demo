@@ -5,13 +5,15 @@ import SendBirdCall, {
   type DialParams,
   type DirectCall,
 } from 'sendbird-calls'
-import { onMounted, ref } from 'vue'
+import { onMounted, ref, type Ref } from 'vue'
 
 console.log(import.meta.env)
 const appId = import.meta.env.VITE_APP_ID
 const this_userId = ref(import.meta.env.VITE_USER_ID ?? '')
 const this_accessToken = ref(import.meta.env.VITE_ACCESS_TOKEN ?? '')
 const dial_userId = ref(import.meta.env.VITE_REMOTE_USER_ID ?? '')
+const directCall: Ref<DirectCall | null> = ref(null)
+const callMsg = ref('沒有來電')
 
 SendBirdCall.init(appId)
 
@@ -46,45 +48,54 @@ function dial(remote_userId: string) {
       videoEnabled: true,
     },
   }
-  const call = SendBirdCall.dial(dialParams, (call, error) => {
+  directCall.value = SendBirdCall.dial(dialParams, (call, error) => {
     if (error) {
       console.error('dial error: ', error)
     }
     console.log('dial call: ', call)
   })
 
-  call.onEstablished = (call) => {
-    //...
+  directCall.value.onEstablished = (call) => {
+    console.log('dial onEstablished: ', call)
   }
 
-  call.onConnected = (call) => {
-    //...
+  directCall.value.onConnected = (call) => {
+    console.log('dial onConnected: ', call)
   }
 
-  call.onEnded = (call) => {
-    //...
+  directCall.value.onEnded = (call) => {
+    console.log('dial onEnded: ', call)
+    directCall.value?.end()
+    directCall.value = null
   }
 
-  call.onRemoteAudioSettingsChanged = (call) => {
-    //...
+  directCall.value.onRemoteAudioSettingsChanged = (call) => {
+    console.log('dial onRemoteAudioSettingsChanged: ', call)
   }
 
-  call.onRemoteVideoSettingsChanged = (call) => {
-    //...
+  directCall.value.onRemoteVideoSettingsChanged = (call) => {
+    console.log('dial onRemoteVideoSettingsChanged: ', call)
   }
 }
 
-const acceptCall = (call: DirectCall) => {
+const callOnRinging = (call: DirectCall) => {
+  if (!call) {
+    return
+  }
+  callMsg.value = '有來電'
   call.onEstablished = (call) => {
     console.log('onEstablished: ', call)
+    callMsg.value = 'call onEstablished'
   }
 
   call.onConnected = (call) => {
     console.log('onConnected: ', call)
+    callMsg.value = '接通通話'
   }
 
   call.onEnded = (call) => {
     console.log('onEnded: ', call)
+    callMsg.value = '結束通話'
   }
 
   call.onRemoteAudioSettingsChanged = (call) => {
@@ -95,6 +106,13 @@ const acceptCall = (call: DirectCall) => {
     console.log('onRemoteVideoSettingsChanged: ', call)
   }
 
+  directCall.value = call
+}
+
+function callAccept(call: DirectCall | null) {
+  if (!call) {
+    return
+  }
   const acceptParams: AcceptParams = {
     callOption: {
       localMediaView: document.getElementById('local_video_element_id') as HTMLVideoElement,
@@ -103,7 +121,6 @@ const acceptCall = (call: DirectCall) => {
       videoEnabled: true,
     },
   }
-
   call.accept(acceptParams)
 }
 
@@ -112,7 +129,7 @@ onMounted(() => {
   SendBirdCall.addListener('sendbirdCallOnRinging', {
     onRinging: (call) => {
       console.log('onRinging: ', call)
-      acceptCall(call)
+      callOnRinging(call)
     },
   })
 })
@@ -140,6 +157,15 @@ onMounted(() => {
         <input v-model="dial_userId" />
       </div>
       <button @click="dial(dial_userId)">dial</button>
+    </div>
+    <div>
+      <span>{{ callMsg }}</span>
+      <button @click="callAccept(directCall)">接受</button>
+      <button @click="directCall?.end()">拒絕</button>
+      <button @click="directCall?.stopVideo()">關閉鏡頭</button>
+      <button @click="directCall?.startVideo()">關閉鏡頭</button>
+      <button @click="directCall?.muteMicrophone()">關閉聲音</button>
+      <button @click="directCall?.unmuteMicrophone()">開啟聲音</button>
     </div>
     <video id="remote_video_element_id" autoPlay></video>
     <video id="local_video_element_id" autoPlay :muted="true"></video>
