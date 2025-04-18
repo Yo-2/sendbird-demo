@@ -163,7 +163,7 @@ onMounted(() => {
       <button @click="callAccept(directCall)">接受</button>
       <button @click="directCall?.end()">拒絕</button>
       <button @click="directCall?.stopVideo()">關閉鏡頭</button>
-      <button @click="directCall?.startVideo()">關閉鏡頭</button>
+      <button @click="directCall?.startVideo()">開啟鏡頭</button>
       <button @click="directCall?.muteMicrophone()">關閉聲音</button>
       <button @click="directCall?.unmuteMicrophone()">開啟聲音</button>
     </div>
