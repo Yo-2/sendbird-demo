@@ -16,7 +16,9 @@ const directCall: Ref<DirectCall | null> = ref(null)
 const callMsg = ref('沒有來電')
 
 function sendbirdInit(appId: string) {
+  console.log('init...')
   SendBirdCall.init(appId)
+  console.log('addListener: onRinging')
   SendBirdCall.addListener('sendbirdCallOnRinging', {
     onRinging: (call) => {
       console.log('onRinging: ', call)
