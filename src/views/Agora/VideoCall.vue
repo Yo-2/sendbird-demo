@@ -25,7 +25,7 @@ function setupEventListeners() {
     await agoraClient?.subscribe(user, mediaType)
     if (mediaType === 'video') {
       // Specify the ID of the DOM element or pass a DOM object.
-      user.videoTrack?.play('<Specify a DOM element>')
+      user.videoTrack?.play('remote-user-video')
     }
     if (mediaType === 'audio') {
       user.audioTrack?.play()
@@ -50,9 +50,25 @@ async function createLocalMediaTracks() {
 }
 
 function displayLocalVideo() {
-  const localPlayerContainer = document.getElementById(this_uid.value) as HTMLDivElement
-  if (localVideoTrack) localVideoTrack?.play(localPlayerContainer)
+  // const localPlayerContainer = document.createElement('div')
+  // localPlayerContainer.id = this_uid.value
+  // localPlayerContainer.textContent = `Local user ${this_uid.value}`
+  // localPlayerContainer.style.width = '640px'
+  // localPlayerContainer.style.height = '480px'
+  // document.body.append(localPlayerContainer)
+  localVideoTrack?.play('local-user-video')
 }
+
+// Display remote user's video
+// function displayRemoteVideo(user) {
+//   const remotePlayerContainer = document.createElement('div')
+//   remotePlayerContainer.id = user.uid.toString()
+//   remotePlayerContainer.textContent = `Remote user ${user.uid}`
+//   remotePlayerContainer.style.width = '640px'
+//   remotePlayerContainer.style.height = '480px'
+//   document.body.append(remotePlayerContainer)
+//   user.videoTrack.play(remotePlayerContainer)
+// }
 
 async function publishLocalTracks() {
   const tracks = []
@@ -64,6 +80,7 @@ async function publishLocalTracks() {
 async function joinChannel() {
   await agoraClient?.join(this_appId.value, this_channel.value, this_token.value, this_uid.value)
   await createLocalMediaTracks()
+  displayLocalVideo()
   await publishLocalTracks()
 }
 
@@ -106,6 +123,7 @@ onMounted(() => {})
     <button @click="leaveChannel()">leave channel</button>
   </div>
   <div>
-    <div :id="this_uid">{{ `Local User: ${this_uid}` }}</div>
+    <div id="local-user-video" style="width: 640px; height: 480px">local user</div>
+    <div id="remote-user-video" style="width: 640px; height: 480px">remote user</div>
   </div>
 </template>
