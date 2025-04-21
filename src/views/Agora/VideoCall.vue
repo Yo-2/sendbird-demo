@@ -70,18 +70,24 @@ function displayRemoteVideo(user: IAgoraRTCRemoteUser) {
   remotePlayerContainer.textContent = `Remote user ${user.uid}`
   remotePlayerContainer.style.width = '640px'
   remotePlayerContainer.style.height = '480px'
-  document.body.append(remotePlayerContainer)
+
+  const remotePlayerContainerList = document.getElementById('remote-videos') as HTMLDivElement
+  remotePlayerContainerList.append(remotePlayerContainer)
+
   user.videoTrack.play(remotePlayerContainer)
 }
 
 function displayRemoteAudio(user: IAgoraRTCRemoteUser) {
   if (!user || !user.audioTrack) return
-  const remotePlayerContainer = document.createElement('div')
-  remotePlayerContainer.id = user.uid.toString()
-  remotePlayerContainer.textContent = `Remote user ${user.uid}`
-  remotePlayerContainer.style.width = '640px'
-  remotePlayerContainer.style.height = '480px'
-  document.body.append(remotePlayerContainer)
+  // const remotePlayerContainer = document.createElement('div')
+  // remotePlayerContainer.id = user.uid.toString()
+  // remotePlayerContainer.textContent = `Remote user ${user.uid}`
+  // remotePlayerContainer.style.width = '640px'
+  // remotePlayerContainer.style.height = '480px'
+  //
+  // const remotePlayerContainerList = document.getElementById('remote-videos') as HTMLDivElement
+  // remotePlayerContainerList.append(remotePlayerContainer)
+
   user.audioTrack.play()
 }
 
@@ -139,6 +145,6 @@ onMounted(() => {})
   </div>
   <div>
     <div id="local-user-video" style="width: 640px; height: 480px">local user</div>
-    <div id="remote-user-video" style="width: 640px; height: 480px">remote user</div>
   </div>
+  <div id="remote-videos"></div>
 </template>
