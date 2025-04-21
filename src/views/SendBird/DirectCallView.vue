@@ -7,15 +7,23 @@ import SendBirdCall, {
 } from 'sendbird-calls'
 import { onMounted, ref, type Ref } from 'vue'
 
-console.log(import.meta.env)
-const appId = import.meta.env.VITE_APP_ID
+// console.log(import.meta.env)
+const this_appId = ref(import.meta.env.VITE_APP_ID ?? '')
 const this_userId = ref(import.meta.env.VITE_USER_ID ?? '')
 const this_accessToken = ref(import.meta.env.VITE_ACCESS_TOKEN ?? '')
 const dial_userId = ref(import.meta.env.VITE_REMOTE_USER_ID ?? '')
 const directCall: Ref<DirectCall | null> = ref(null)
 const callMsg = ref('沒有來電')
 
-SendBirdCall.init(appId)
+function sendbirdInit(appId: string) {
+  SendBirdCall.init(appId)
+  SendBirdCall.addListener('sendbirdCallOnRinging', {
+    onRinging: (call) => {
+      console.log('onRinging: ', call)
+      callOnRinging(call)
+    },
+  })
+}
 
 function authenticate(authOption: AuthOption) {
   // console.log('authOption: ', authOption)
@@ -124,20 +132,19 @@ function callAccept(call: DirectCall | null) {
   call.accept(acceptParams)
 }
 
-onMounted(() => {
-  console.log('addListener: onRinging')
-  SendBirdCall.addListener('sendbirdCallOnRinging', {
-    onRinging: (call) => {
-      console.log('onRinging: ', call)
-      callOnRinging(call)
-    },
-  })
-})
+onMounted(() => {})
 </script>
 
 <template>
   <main>
     <h1>Sendbird DirectCall</h1>
+    <div>
+      <div>
+        <span>你的appId</span>
+        <input v-model="this_appId" />
+      </div>
+      <button @click="sendbirdInit(this_appId)">init</button>
+    </div>
     <div>
       <div>
         <span>你的userId</span>
