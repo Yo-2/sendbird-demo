@@ -1,51 +1,26 @@
 <script setup lang="ts">
-import SendBirdCall, {
-  type AcceptParams,
-  type AuthOption,
-  type DialParams,
-  type DirectCall,
-} from 'sendbird-calls'
-import { onMounted, ref } from 'vue'
+import SendBirdCall, { Room, type AuthOption } from 'sendbird-calls'
+import { ref, type Ref } from 'vue'
 
-console.log(import.meta.env)
-const appId = import.meta.env.VITE_APP_ID
+const this_appId = ref(import.meta.env.VITE_APP_ID ?? '')
+const this_room: Ref<Room | null> = ref(null)
 const this_userId = ref(import.meta.env.VITE_USER_ID ?? '')
 const this_accessToken = ref(import.meta.env.VITE_ACCESS_TOKEN ?? '')
 const dial_userId = ref(import.meta.env.VITE_REMOTE_USER_ID ?? '')
+const this_invitation: Ref<SendBirdCall.RoomInvitation | null> = ref(null)
+const inviteMsg = ref('沒有群組邀請')
 
-SendBirdCall.init(appId)
-
-const acceptCall = (call: DirectCall) => {
-  call.onEstablished = (call) => {
-    console.log('onEstablished: ', call)
-  }
-
-  call.onConnected = (call) => {
-    console.log('onConnected: ', call)
-  }
-
-  call.onEnded = (call) => {
-    console.log('onEnded: ', call)
-  }
-
-  call.onRemoteAudioSettingsChanged = (call) => {
-    console.log('onRemoteAudioSettingsChanged: ', call)
-  }
-
-  call.onRemoteVideoSettingsChanged = (call) => {
-    console.log('onRemoteVideoSettingsChanged: ', call)
-  }
-
-  const acceptParams: AcceptParams = {
-    callOption: {
-      localMediaView: document.getElementById('local_video_element_id') as HTMLVideoElement,
-      remoteMediaView: document.getElementById('remote_video_element_id') as HTMLVideoElement,
-      audioEnabled: true,
-      videoEnabled: true,
+function sendbirdInit(appId: string) {
+  console.log('init...')
+  SendBirdCall.init(appId)
+  console.log('addListener: onRinging')
+  SendBirdCall.addListener('sendbirdGroupCall', {
+    onInvitationReceived: (invitation) => {
+      console.log('onInvitationReceived: ', invitation)
+      inviteMsg.value = '有群組邀請'
+      this_invitation.value = invitation
     },
-  }
-
-  call.accept(acceptParams)
+  })
 }
 
 function authenticate(authOption: AuthOption) {
@@ -66,82 +41,164 @@ function authenticate(authOption: AuthOption) {
   })
 }
 
-function dial(remote_userId: string) {
-  console.log('remote_userId: ', remote_userId)
-  SendBirdCall.useMedia({ audio: true, video: true })
-  const dialParams: DialParams = {
-    userId: remote_userId,
-    isVideoCall: true,
-    callOption: {
-      localMediaView: document.getElementById('local_video_element_id') as HTMLVideoElement,
-      remoteMediaView: document.getElementById('remote_video_element_id') as HTMLVideoElement,
-      audioEnabled: true,
-      videoEnabled: true,
-    },
-  }
-  const call = SendBirdCall.dial(dialParams, (call, error) => {
-    if (error) {
-      console.error('dial error: ', error)
-    }
-    console.log('dial call: ', call)
-  })
-
-  call.onEstablished = (call) => {
-    //...
+function createRoom() {
+  const roomParams = {
+    roomType: SendBirdCall.RoomType.SMALL_ROOM_FOR_VIDEO,
   }
 
-  call.onConnected = (call) => {
-    //...
-  }
+  SendBirdCall.createRoom(roomParams)
+    .then((room) => {
+      console.log('createRoom: ', room)
+      this_room.value = room
+      const enterParams = {
+        videoEnabled: true,
+        audioEnabled: true,
+      }
+      this_room.value
+        .enter(enterParams)
+        .then(() => {
+          console.log('enter room...')
+          const localMediaView = document.getElementById(
+            'local_video_element_id',
+          ) as HTMLVideoElement
+          // Set local media view.
+          this_room.value?.localParticipant?.setMediaView(localMediaView)
+          // Called when a remote participant is connected to the media stream and starts sending the media stream.
+          this_room.value?.on('remoteParticipantStreamStarted', (remoteParticipant) => {
+            // Create a new HTMLMediaElement to set remote participant's media stream.
+            const remoteMediaView = document.createElement('video')
+            // It is recommended to set a media view element's autoplay property to true.
+            remoteMediaView.autoplay = true
+            remoteParticipant.setMediaView(remoteMediaView)
+            document.body.appendChild(remoteMediaView)
+          })
+        })
+        .catch((err) => {
+          console.error('enterRoom error: ', err)
+        })
+    })
+    .catch((err) => {
+      console.error('createRoom error: ', err)
+    })
+}
 
-  call.onEnded = (call) => {
-    //...
-  }
+function muteMicrophone() {
+  this_room.value?.localParticipant.muteMicrophone()
+}
+function unmuteMicrophone() {
+  this_room.value?.localParticipant.unmuteMicrophone()
+}
+function stopVideo() {
+  this_room.value?.localParticipant.stopVideo()
+}
+function startVideo() {
+  this_room.value?.localParticipant.startVideo()
+}
 
-  call.onRemoteAudioSettingsChanged = (call) => {
-    //...
+async function invite(inviteeId: string) {
+  if (!this_room.value) {
+    return
   }
-
-  call.onRemoteVideoSettingsChanged = (call) => {
-    //...
+  try {
+    await this_room.value.sendInvitation(inviteeId)
+  } catch (e) {
+    console.error('invite error: ', e)
   }
 }
 
-onMounted(() => {
-  console.log('addListener: onRinging')
-  SendBirdCall.addListener('sendbirdCallOnRinging', {
-    onRinging: (call) => {
-      console.log('onRinging: ', call)
-      acceptCall(call)
-    },
-  })
-})
-</script>
+function exitRoom() {
+  if (!this_room.value) {
+    return
+  }
+  try {
+    this_room.value.exit()
+    console.log('exit room...')
+  } catch (e) {
+    console.error('exitRoom error: ', e)
+  }
+}
 
+async function deleteRoom() {
+  if (!this_room.value) {
+    return
+  }
+  try {
+    await this_room.value.delete()
+    console.log('delete room...')
+    this_room.value = null
+  } catch (e) {
+    console.error('deleteRoom error: ', e)
+  }
+}
+
+async function acceptInvitation(invitation: SendBirdCall.RoomInvitation | null) {
+  if (!invitation) {
+    return
+  }
+  try {
+    await invitation.accept()
+  } catch (e) {
+    console.error('acceptInvitation error: ', e)
+  }
+}
+
+async function declineInvitation(invitation: SendBirdCall.RoomInvitation | null) {
+  if (!invitation) {
+    return
+  }
+  try {
+    await invitation.decline()
+    console.log('decline invitation...')
+    inviteMsg.value = '沒有群組邀請'
+  } catch (e) {
+    console.error('declineInvitation error: ', e)
+  }
+}
+</script>
 <template>
-  <main>
-    <h1>SendBird GroupCall</h1>
+  <div>Sendbird GroupCall</div>
+  <div>
     <div>
-      <div>
-        <span>你的userId</span>
-        <input v-model="this_userId" />
-      </div>
-      <div>
-        <span>你的accessToken</span>
-        <input v-model="this_accessToken" />
-      </div>
-      <button @click="authenticate({ userId: this_userId, accessToken: this_accessToken })">
-        auth
-      </button>
+      <span>你的appId</span>
+      <input v-model="this_appId" />
+    </div>
+    <button @click="sendbirdInit(this_appId)">init</button>
+  </div>
+  <div>
+    <div>
+      <span>你的userId</span>
+      <input v-model="this_userId" />
     </div>
     <div>
-      <div>
-        <span>要撥打的userId</span>
-        <input v-model="dial_userId" />
-      </div>
-      <button @click="dial(dial_userId)">dial</button>
+      <span>你的accessToken</span>
+      <input v-model="this_accessToken" />
     </div>
-    <video id="remote_video_element_id" autoPlay></video>
-    <video id="local_video_element_id" autoPlay :muted="true"></video>
-  </main>
+    <button @click="authenticate({ userId: this_userId, accessToken: this_accessToken })">
+      auth
+    </button>
+  </div>
+  <div>
+    <div>
+      <span>remote userId</span>
+      <input v-model="dial_userId" />
+    </div>
+    <button @click="invite(dial_userId)">invite</button>
+  </div>
+  <div>
+    <button @click="createRoom">create room</button>
+    <button @click="exitRoom">exit room</button>
+    <button @click="deleteRoom">delete room</button>
+  </div>
+  <div>
+    <span>{{ inviteMsg }}</span>
+    <button @click="acceptInvitation(this_invitation)">接受</button>
+    <button @click="declineInvitation(this_invitation)">拒絕</button>
+    <button @click="stopVideo()">關閉鏡頭</button>
+    <button @click="startVideo()">開啟鏡頭</button>
+    <button @click="muteMicrophone()">關閉聲音</button>
+    <button @click="unmuteMicrophone()">開啟聲音</button>
+  </div>
+  <div>
+    <video id="local_video_element_id" style="width: 640px; height: 480px" autoplay></video>
+  </div>
 </template>
