@@ -1,6 +1,7 @@
 <script lang="ts" setup>
 import AgoraRTC, {
   type IAgoraRTCClient,
+  type IAgoraRTCRemoteUser,
   type ILocalAudioTrack,
   type ILocalVideoTrack,
 } from 'agora-rtc-sdk-ng'
@@ -25,10 +26,12 @@ function setupEventListeners() {
     await agoraClient?.subscribe(user, mediaType)
     if (mediaType === 'video') {
       // Specify the ID of the DOM element or pass a DOM object.
-      user.videoTrack?.play('remote-user-video')
+      // user.videoTrack?.play('remote-user-video')
+      displayRemoteVideo(user)
     }
     if (mediaType === 'audio') {
-      user.audioTrack?.play()
+      // user.audioTrack?.play()
+      displayRemoteAudio(user)
     }
   })
 
@@ -60,15 +63,27 @@ function displayLocalVideo() {
 }
 
 // Display remote user's video
-// function displayRemoteVideo(user) {
-//   const remotePlayerContainer = document.createElement('div')
-//   remotePlayerContainer.id = user.uid.toString()
-//   remotePlayerContainer.textContent = `Remote user ${user.uid}`
-//   remotePlayerContainer.style.width = '640px'
-//   remotePlayerContainer.style.height = '480px'
-//   document.body.append(remotePlayerContainer)
-//   user.videoTrack.play(remotePlayerContainer)
-// }
+function displayRemoteVideo(user: IAgoraRTCRemoteUser) {
+  if (!user || !user.videoTrack) return
+  const remotePlayerContainer = document.createElement('div')
+  remotePlayerContainer.id = user.uid.toString()
+  remotePlayerContainer.textContent = `Remote user ${user.uid}`
+  remotePlayerContainer.style.width = '640px'
+  remotePlayerContainer.style.height = '480px'
+  document.body.append(remotePlayerContainer)
+  user.videoTrack.play(remotePlayerContainer)
+}
+
+function displayRemoteAudio(user: IAgoraRTCRemoteUser) {
+  if (!user || !user.audioTrack) return
+  const remotePlayerContainer = document.createElement('div')
+  remotePlayerContainer.id = user.uid.toString()
+  remotePlayerContainer.textContent = `Remote user ${user.uid}`
+  remotePlayerContainer.style.width = '640px'
+  remotePlayerContainer.style.height = '480px'
+  document.body.append(remotePlayerContainer)
+  user.audioTrack.play()
+}
 
 async function publishLocalTracks() {
   const tracks = []
