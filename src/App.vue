@@ -7,6 +7,7 @@ import { RouterLink, RouterView } from 'vue-router'
     <div class="nav">
       <RouterLink to="/">Sendbird_DirectCall</RouterLink>
       <RouterLink to="/sendBirdGroupCall">Sendbird_GroupCall</RouterLink>
+      <RouterLink to="/sendBirdChat">Sendbird_ChatCall</RouterLink>
       <RouterLink to="/agora/videoCall">Agora_VideoCall</RouterLink>
     </div>
 
